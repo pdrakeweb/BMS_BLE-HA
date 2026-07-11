@@ -1,5 +1,6 @@
 """Test the BLE Battery Management System integration config flow."""
 
+from datetime import timedelta
 from typing import Any, Final
 from unittest.mock import AsyncMock
 
@@ -15,9 +16,11 @@ from custom_components.bms_ble.const import (
     BINARY_SENSORS,
     CONF_ADVANCED_OPTIONS,
     CONF_KEEP_ALIVE,
+    CONF_UPDATE_INTERVAL,
     DOMAIN,
     LINK_SENSORS,
     SENSORS,
+    UPDATE_INTERVAL,
 )
 from homeassistant.config_entries import (
     SOURCE_BLUETOOTH,
@@ -440,7 +443,10 @@ async def test_options_flow(
     """Test config options flow."""
 
     options: Final[dict[str, Any]] = {CONF_PASSWORD: "123456"} | {
-        CONF_ADVANCED_OPTIONS: {CONF_KEEP_ALIVE: True}
+        CONF_ADVANCED_OPTIONS: {
+            CONF_KEEP_ALIVE: True,
+            CONF_UPDATE_INTERVAL: UPDATE_INTERVAL,
+        }
     }
 
     # pick one BMS type with password option
@@ -487,7 +493,12 @@ async def test_options_flow_no_secret(hass: HomeAssistant) -> None:
     assert result.get("type") is FlowResultType.FORM
     assert result.get("step_id") == "init"
 
-    options: Final[dict[str, Any]] = {CONF_ADVANCED_OPTIONS: {CONF_KEEP_ALIVE: True}}
+    options: Final[dict[str, Any]] = {
+        CONF_ADVANCED_OPTIONS: {
+            CONF_KEEP_ALIVE: True,
+            CONF_UPDATE_INTERVAL: UPDATE_INTERVAL,
+        }
+    }
 
     result = await hass.config_entries.options.async_configure(
         result["flow_id"], user_input=options
@@ -547,7 +558,10 @@ async def test_options_effect(
 
     adv_options: dict[str, Any] = {
         CONF_PASSWORD: "123abc",
-        CONF_ADVANCED_OPTIONS: {CONF_KEEP_ALIVE: keep_alive},
+        CONF_ADVANCED_OPTIONS: {
+            CONF_KEEP_ALIVE: keep_alive,
+            CONF_UPDATE_INTERVAL: 900,
+        },
     }
 
     result = await hass.config_entries.options.async_configure(
@@ -562,6 +576,9 @@ async def test_options_effect(
         options[CONF_KEEP_ALIVE] == keep_alive
     ), f"keep_alive value {keep_alive} not set."
     assert options.get(CONF_PASSWORD) == "123abc"
+    assert cfg.runtime_data.update_interval == timedelta(seconds=900), (
+        "update_interval option did not reach the coordinator."
+    )
 
 
 @pytest.mark.usefixtures("enable_bluetooth")
