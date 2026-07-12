@@ -36,6 +36,7 @@ from .const import (
     ATTR_BALANCE_CUR,
     ATTR_BATTERY_HEALTH,
     ATTR_CELL_NUMBER,
+    ATTR_CELL_VOLTAGE,
     ATTR_CELL_VOLTAGES,
     ATTR_CURRENT,
     ATTR_CYCLE_CAP,
@@ -61,6 +62,7 @@ class BmsEntityDescription(SensorEntityDescription, frozen_or_thawed=True):
 
     attr_fn: Callable[[BMSSample], dict[str, list[int | float]]] | None = None
     optional: bool = False
+    placeholders: dict[str, str] | None = None
     value_fn: Callable[[BMSSample], float | int | None]
 
 
@@ -233,6 +235,27 @@ SENSOR_TYPES: Final[list[BmsEntityDescription]] = [
 ]
 
 
+def _cell_voltage_desc(idx: int) -> BmsEntityDescription:
+    """Build the description for a single cell's voltage sensor (idx is 0-based)."""
+
+    def _value(data: BMSSample) -> float | int | None:
+        cells: list[float] = data.get("cell_voltages", [])
+        return cells[idx] if idx < len(cells) else None
+
+    return BmsEntityDescription(
+        device_class=SensorDeviceClass.VOLTAGE,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        key=f"{ATTR_CELL_VOLTAGE}_{idx + 1}",
+        native_unit_of_measurement=UnitOfElectricPotential.VOLT,
+        placeholders={"number": str(idx + 1)},
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=3,
+        translation_key=ATTR_CELL_VOLTAGE,
+        value_fn=_value,
+    )
+
+
 async def async_setup_entry(
     _hass: HomeAssistant,
     config_entry: BTBmsConfigEntry,
@@ -254,6 +277,12 @@ async def async_setup_entry(
             continue
         entities.append(BMSSensor(bms, descr, mac))
 
+    # one voltage sensor per cell, based on the count in the initial sample
+    entities.extend(
+        BMSSensor(bms, _cell_voltage_desc(idx), mac)
+        for idx in range(len(bms.data.get("cell_voltages", [])))
+    )
+
     async_add_entities(entities)
 
 
@@ -270,6 +299,8 @@ class BMSSensor(CoordinatorEntity[BTBmsCoordinator], SensorEntity):
         """Initialize the BMS sensor."""
         self._attr_unique_id = f"{DOMAIN}-{unique_id}-{descr.key}"
         self._attr_device_info = bms.device_info
+        if descr.placeholders is not None:
+            self._attr_translation_placeholders = descr.placeholders
         self.entity_description = descr
         super().__init__(bms)
 

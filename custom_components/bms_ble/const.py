@@ -18,6 +18,7 @@ ATTR_BATTERY_MODE: Final[str] = "battery_mode"  # [int]
 ATTR_CELLS: Final[str] = "cells"  # [bitmask]
 ATTR_CELL_COUNT: Final[str] = "cell_count"  # [#]
 ATTR_CELL_NUMBER: Final[str] = "cell_number"  # [#]
+ATTR_CELL_VOLTAGE: Final[str] = "cell_voltage"  # [V] per-cell entity key base
 ATTR_CELL_VOLTAGES: Final[str] = "cell_voltages"  # [V]
 ATTR_CHRG_MOSFET: Final[str] = "chrg_mosfet"  # [bool]
 ATTR_CURRENT: Final[str] = "current"  # [A]

@@ -24,6 +24,9 @@
       "battery_health": {
         "default": "mdi:battery-heart-variant"
       },
+      "cell_voltage": {
+        "default": "mdi:battery-outline"
+      },
       "current": {
         "default": "mdi:current-dc"
       },

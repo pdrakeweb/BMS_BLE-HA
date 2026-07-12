@@ -40,6 +40,9 @@
       "battery_health": {
         "name": "Battery health"
       },
+      "cell_voltage": {
+        "name": "Cell {number} voltage"
+      },
       "current": {
         "name": "[%key:component::sensor::entity_component::current::name%]"
       },
